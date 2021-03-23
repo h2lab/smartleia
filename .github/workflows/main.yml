@@ -1,0 +1,45 @@
+name: leia-python-package
+
+# Run this workflow every time a new commit pushed to your repository
+on: push
+
+jobs:
+  distro_package:
+    runs-on: ubuntu-latest
+    # Debian sid contained, since packages are not in ubuntu yet
+    container: debian:sid
+    steps:
+      # Install dependencies and test
+      - name: test distro package
+        shell: bash
+        run: |
+          apt-get -y update;
+          apt-get -y install python3;
+          apt-get -y install smartleia;
+          apt-get -y install vsmartcard-vpcd vsmartcard-vpicc;
+          python3 -c "import smartleia";
+  local_python_package:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: [3.6, 3.7, 3.8, 3.9]
+    steps:
+      # Checkout repository
+      - name: checkout repository
+        uses: actions/checkout@v2
+      # Run actions
+      - name: set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ matrix.python-version }}
+      # Install dependencies and test
+      - name: tests
+        shell: bash
+        run: |
+          pip install pytest;
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi;
+          pip install --user .;
+          # Try to import the installed package
+          python -c "import smartleia";
+          # Try to launch it
+          python -m smartleia || if [ $? -eq 42 ]; then echo "Success (42 is a legitimate exit code)"; else exit 1; fi
