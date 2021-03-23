@@ -34,7 +34,7 @@ python -m pip install --upgrade pip setuptools wheel
 ```
 
 ```sh
-git clone https://github.com/cw-leia/smartleia
+git clone https://github.com/h2lab/smartleia
 cd smartleia
 pip install --user .;
 ```
