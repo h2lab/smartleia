@@ -1,5 +1,6 @@
 
-[![GitHub license](https://img.shields.io/github/license/h2lab/smartleia)](https://github.com/h2lab/smartleia/blob/master/LICENSE.bsd3) ![Debian package](https://img.shields.io/debian/v/smartleia/unstable) ![Build status](https://github.com/h2lab/smartleia/actions/workflows/main.yml/badge.svg) [![Sonarcloud Status](https://sonarcloud.io/api/project_badges/measure?project=com.lapots.breed.judge:judge-rule-engine&metric=alert_status)](https://sonarcloud.io/dashboard?id=com.lapots.breed.judge:judge-rule-engine)
+[![GitHub license](https://img.shields.io/github/license/h2lab/smartleia)](https://github.com/h2lab/smartleia/blob/master/LICENSE.bsd3) [![Debian package](https://img.shields.io/debian/v/smartleia/unstable)](https://tracker.debian.org/pkg/smartleia) ![Build status](https://github.com/h2lab/smartleia/actions/workflows/main.yml/badge.svg) [![Sonarcloud Status](https://sonarcloud.io/api/project_badges/measure?project=h2lab_smartleia&metric=alert_status)](https://sonarcloud.io/dashboard?id=h2lab_smartleia)
+
 
 # SmartLeia
 
