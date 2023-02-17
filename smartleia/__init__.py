@@ -43,16 +43,19 @@ ERR_FLAGS = {0x00: "OK", 0x01: "PLATFORM_ERR_CARD_NOT_INSERTED", 0xFF: "UNKNOWN_
 
 class LEIAException(Exception):
     """A LEIA exception."""
+
     pass
 
 
 class CardNotInsertedError(LEIAException):
     """Card needs to be inserted and is not."""
+
     pass
 
 
 class CardConfigureError(LEIAException):
     """Card cannot be configured."""
+
     pass
 
 
@@ -91,7 +94,7 @@ class Timers(LEIAStructure):
         ("delta_t_answer", ctypes.c_uint32),
     ]
 
-    def __init__(self, delta_t = 0, delta_t_answer = 0):
+    def __init__(self, delta_t=0, delta_t_answer=0):
         """
         Create a Timers structure.
 
@@ -99,7 +102,7 @@ class Timers(LEIAStructure):
             delta_t (int) : total time for the APDU.
             delta_t_answer (int) : answer time for the APDU.
         """
-        LEIAStructure.__init__(self, delta_t = 0, delta_t_answer = 0)
+        LEIAStructure.__init__(self, delta_t=0, delta_t_answer=0)
         self.delta_t = self.delta_t_answer = 0
 
     def __str__(self) -> str:
@@ -107,7 +110,8 @@ class Timers(LEIAStructure):
         delta_t={self.delta_t:d} microseconds,
         delta_t_answer={self.delta_t_answer:d} microseconds,
         )"""
- 
+
+
 ##### Triggers handling ######
 class TriggerPoints(IntFlag):
     """
@@ -168,7 +172,7 @@ class Triggers(Enum):
         TriggerPoints.TRIG_PRE_SEND_APDU,
         TriggerPoints.TRIG_IRQ_PUTC,
     ]
-    
+
 
 class TriggerStrategy(LEIAStructure):
     """
@@ -261,23 +265,23 @@ class SetTriggerStrategy(LEIAStructure):
 class ATR(LEIAStructure):
     """This class is used to represent an ATR.
 
-       Attributes:
-           ts (ctypes.c_uint8): Description of `attr1`.
-           t0 (ctypes.c_uint8): Description of `attr2`.
-           ta (ctypes.c_uint8[4]): Description of `attr1`.
-           tb (ctypes.c_uint8[4]): Description of `attr2`.
-           tc (ctypes.c_uint8[4]): Description of `attr1`.
-           td (ctypes.c_uint8[4]): Description of `attr2`.
-           h (ctypes.c_uint8[16]): Description of `attr1`.
-           t_mask (ctypes.c_uint8[4]): Description of `attr2`.
-           h_num (ctypes.c_uint8): Description of `attr1`.
-           tck (ctypes.c_uint8): Description of `attr2`.
-           tck_present (ctypes.c_uint8): Description of `attr1`.
-           D_i_curr (ctypes.c_uint32): Description of `attr2`.
-           F_i_curr (ctypes.c_uint32): Description of `attr1`.
-           f_max_curr (ctypes.c_uint32): Description of `attr2`.
-           T_protocol_curr (ctypes.c_uint8): Description of `attr1`.
-           ifsc (ctypes.c_uint8): Description of `attr2`.
+    Attributes:
+        ts (ctypes.c_uint8): Description of `attr1`.
+        t0 (ctypes.c_uint8): Description of `attr2`.
+        ta (ctypes.c_uint8[4]): Description of `attr1`.
+        tb (ctypes.c_uint8[4]): Description of `attr2`.
+        tc (ctypes.c_uint8[4]): Description of `attr1`.
+        td (ctypes.c_uint8[4]): Description of `attr2`.
+        h (ctypes.c_uint8[16]): Description of `attr1`.
+        t_mask (ctypes.c_uint8[4]): Description of `attr2`.
+        h_num (ctypes.c_uint8): Description of `attr1`.
+        tck (ctypes.c_uint8): Description of `attr2`.
+        tck_present (ctypes.c_uint8): Description of `attr1`.
+        D_i_curr (ctypes.c_uint32): Description of `attr2`.
+        F_i_curr (ctypes.c_uint32): Description of `attr1`.
+        f_max_curr (ctypes.c_uint32): Description of `attr2`.
+        T_protocol_curr (ctypes.c_uint8): Description of `attr1`.
+        ifsc (ctypes.c_uint8): Description of `attr2`.
     """
 
     _pack_ = 1
@@ -585,7 +589,9 @@ class RESP(LEIAStructure):
         return (
             f"RESP(sw1=0x{self.sw1:02X}, sw2=0x{self.sw2:02X}, le={hex(self.le)}"
             + (f", data={self.data}" if self.le != 0 else "")
-            + (f")\ndelta_t={self.delta_t:d} microseconds, delta_t_answer={self.delta_t_answer:d} microseconds")
+            + (
+                f")\ndelta_t={self.delta_t:d} microseconds, delta_t_answer={self.delta_t_answer:d} microseconds"
+            )
         )
 
     @property
@@ -624,16 +630,18 @@ class T(IntEnum):
     #: The protocol is T=1
     T1 = 1
 
+
 class Mode(IntEnum):
     """
     ISO7816 mode selection.
     """
-   
+
     # USART mode
     USART = 0
 
     # Bitbang mode
     BITBANG = 1
+
 
 class LEIAMode(LEIAStructure):
     _pack_ = 1
@@ -840,18 +848,14 @@ class LEIA:
         elif mode == Mode.BITBANG:
             self._send_command(b"e", LEIAMode(Mode.BITBANG))
         else:
-            raise ValueError(
-                "Invalid mode for 'set_mode' (e) command."
-            )
-        
+            raise ValueError("Invalid mode for 'set_mode' (e) command.")
+
     # Get the current mode
     def get_mode(self):
         self._send_command(b"g")
         r_size = self._read_response_size()
         if r_size != 1:
-            raise LEIAException(
-                "Invalid response size for 'get_mode' (g) command."
-            )
+            raise LEIAException("Invalid response size for 'get_mode' (g) command.")
         r = self.ser.read(1)
         if r == b"\x00":
             mode = Mode.USART
@@ -891,7 +895,9 @@ class LEIA:
             negotiate_baudrate: if LEIA can negotiate the baudrate. There is not impact if `ETU_to_use` and `freq_to_use` are set.
         """
         if not self.is_card_inserted():
-            raise CardNotInsertedError("Card not inserted! Please insert a card to configure it.")
+            raise CardNotInsertedError(
+                "Card not inserted! Please insert a card to configure it."
+            )
 
         with self.lock:
             self._testWaitingFlag()
@@ -958,9 +964,13 @@ class LEIA:
                                 )
                                 self._send_command(b"c", struct)
                             except Exception:
-                                raise CardConfigureError("Configure_smartcard failed with the asked parameters! Please check what your card supports (PTS, ETU, ...) and try other parameters!")
+                                raise CardConfigureError(
+                                    "Configure_smartcard failed with the asked parameters! Please check what your card supports (PTS, ETU, ...) and try other parameters!"
+                                )
                         else:
-                            raise CardConfigureError("Configure_smartcard failed with the asked parameters! Please check what your card supports (PTS, ETU, ...) and try other parameters!")
+                            raise CardConfigureError(
+                                "Configure_smartcard failed with the asked parameters! Please check what your card supports (PTS, ETU, ...) and try other parameters!"
+                            )
             else:
                 try:
                     struct = ConfigureSmartcardCommand(
@@ -984,9 +994,13 @@ class LEIA:
                             )
                             self._send_command(b"c", struct)
                         except Exception:
-                            raise CardConfigureError("Configure_smartcard failed with the asked parameters! Please check what your card supports (PTS, ETU, ...) and try other parameters!")
+                            raise CardConfigureError(
+                                "Configure_smartcard failed with the asked parameters! Please check what your card supports (PTS, ETU, ...) and try other parameters!"
+                            )
                     else:
-                        raise CardConfigureError("Configure_smartcard failed with the asked parameters! Please check what your card supports (PTS, ETU, ...) and try other parameters!")
+                        raise CardConfigureError(
+                            "Configure_smartcard failed with the asked parameters! Please check what your card supports (PTS, ETU, ...) and try other parameters!"
+                        )
 
     def get_trigger_strategy(self, SID: int) -> TriggerStrategy:
         """
@@ -999,10 +1013,13 @@ class LEIA:
             TriggerStrategy: The trigger strategy N°SID.
         """
         if SID >= STRATEGY_MAX:
-            raise ValueError("get_trigger_strategy: asked SID=%d exceeds STRATEGY_MAX=%d" % (SID, STRATEGY_MAX))
+            raise ValueError(
+                "get_trigger_strategy: asked SID=%d exceeds STRATEGY_MAX=%d"
+                % (SID, STRATEGY_MAX)
+            )
 
         with self.lock:
-           
+
             self._send_command(b"o", ByteStruct(SID))
 
             r_size = self._read_response_size()
@@ -1011,7 +1028,11 @@ class LEIA:
         return r
 
     def set_trigger_strategy(
-        self, SID: int, point_list: Union[int, List[int]], delay: int = 0, single: int = 0
+        self,
+        SID: int,
+        point_list: Union[int, List[int]],
+        delay: int = 0,
+        single: int = 0,
     ):
         """
         Set and activate a trigger strategy.
@@ -1022,7 +1043,10 @@ class LEIA:
             delay: the delay (in milliseconds) between the moment of the detection and the moment where the trigger is actually set high.
         """
         if SID >= STRATEGY_MAX:
-            raise ValueError("get_trigger_strategy: asked SID=%d exceeds STRATEGY_MAX=%d" % (SID, STRATEGY_MAX))
+            raise ValueError(
+                "get_trigger_strategy: asked SID=%d exceeds STRATEGY_MAX=%d"
+                % (SID, STRATEGY_MAX)
+            )
 
         with self.lock:
 
@@ -1032,7 +1056,9 @@ class LEIA:
 
             size = len(point_list)
 
-            sts = SetTriggerStrategy(SID, TriggerStrategy(delay = delay, single = single, point_list = point_list))
+            sts = SetTriggerStrategy(
+                SID, TriggerStrategy(delay=delay, single=single, point_list=point_list)
+            )
 
             self._send_command(b"O", sts)
 
@@ -1109,7 +1135,7 @@ class LEIA:
                 self._send_command(b"f")
             except serial.SerialException:
                 pass
- 
+
     def smartreader(self) -> None:
         """
         Reboot LEIA in funcard smartreader mode.

@@ -42,7 +42,9 @@ if __name__ == "__main__":
     try:
         leia.pcsc_relay()
     except:
-        print("Error: error in pcsc_relay, is PCSCD running? Launch in a terminal with 'pcscd -fad'")
+        print(
+            "Error: error in pcsc_relay, is PCSCD running? Launch in a terminal with 'pcscd -fad'"
+        )
         sys.exit(42)
 
     code.interact(
