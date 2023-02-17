@@ -41,6 +41,21 @@ MAX_APDU_PAYLOAD_SIZE = 16384
 ERR_FLAGS = {0x00: "OK", 0x01: "PLATFORM_ERR_CARD_NOT_INSERTED", 0xFF: "UNKNOWN_ERROR"}
 
 
+class LEIAException(Exception):
+    """A LEIA exception."""
+    pass
+
+
+class CardNotInsertedError(LEIAException):
+    """Card needs to be inserted and is not."""
+    pass
+
+
+class CardConfigureError(LEIAException):
+    """Card cannot be configured."""
+    pass
+
+
 class LEIAStructure(ctypes.Structure):
     """
     Base structure for exchanging data with LEIA.
@@ -205,9 +220,9 @@ class TriggerStrategy(LEIAStructure):
         value = self._translate_point_list(value)
 
         if not isinstance(value, list):
-            raise Exception("data should be a list")
+            raise TypeError("point_list should be a list")
         if len(value) > len(self._list):
-            raise Exception("Size of data too high")
+            raise ValueError("Size of point_list too large")
         for i, v in enumerate(value):
             self._list[i] = value[i]
         self.size = len(value)
@@ -233,7 +248,6 @@ class TriggerStrategy(LEIAStructure):
         _event_time_list = list(self._event_time)[0 : self.size]
 
         return _event_time_list
-
 
 
 class SetTriggerStrategy(LEIAStructure):
@@ -445,9 +459,9 @@ class APDU(LEIAStructure):
     @data.setter
     def data(self, value):
         if not isinstance(value, list):
-            raise Exception("data should be a list")
+            raise TypeError("data should be a list")
         if len(value) > len(self._data):
-            raise Exception("Size of data too high")
+            raise ValueError("Size of data too high")
         for i, v in enumerate(value):
             self._data[i] = value[i]
         self.lc = len(value)
@@ -581,9 +595,9 @@ class RESP(LEIAStructure):
     @data.setter
     def data(self, value):
         if not isinstance(value, list):
-            raise Exception("data should be a list")
+            raise TypeError("data should be a list")
         if len(value) > len(self._data):
-            raise Exception("Size of data too high")
+            raise ValueError("Size of data too high")
         for i, v in enumerate(value):
             self._data[i] = value[i]
         self.le = len(value)
@@ -826,7 +840,7 @@ class LEIA:
         elif mode == Mode.BITBANG:
             self._send_command(b"e", LEIAMode(Mode.BITBANG))
         else:
-            raise Exception(
+            raise ValueError(
                 "Invalid mode for 'set_mode' (e) command."
             )
         
@@ -835,7 +849,7 @@ class LEIA:
         self._send_command(b"g")
         r_size = self._read_response_size()
         if r_size != 1:
-            raise Exception(
+            raise LEIAException(
                 "Invalid response size for 'get_mode' (g) command."
             )
         r = self.ser.read(1)
@@ -876,8 +890,8 @@ class LEIA:
             negotiate_pts: if LEIA can try to negotiate the PTS.
             negotiate_baudrate: if LEIA can negotiate the baudrate. There is not impact if `ETU_to_use` and `freq_to_use` are set.
         """
-        if self.is_card_inserted() == False:
-            raise Exception("Error: card not inserted! Please insert a card to configure it.")
+        if not self.is_card_inserted():
+            raise CardNotInsertedError("Card not inserted! Please insert a card to configure it.")
 
         with self.lock:
             self._testWaitingFlag()
@@ -911,7 +925,7 @@ class LEIA:
 
             # We always try to negotiate a T=1 communication if not specifically asked otherwise
             # Fallback to auto if this is not possible!
-            if (protocol_to_use == T.AUTO):
+            if protocol_to_use == T.AUTO:
                 try:
                     struct = ConfigureSmartcardCommand(
                         T(T.T1).value + 1,
@@ -932,7 +946,7 @@ class LEIA:
                         )
                         self._send_command(b"c", struct)
                     except Exception:
-                        if negotiate_pts == None:
+                        if negotiate_pts is None:
                             try:
                                 # If we have not been asked to specifically negotiate
                                 struct = ConfigureSmartcardCommand(
@@ -944,9 +958,9 @@ class LEIA:
                                 )
                                 self._send_command(b"c", struct)
                             except Exception:
-                                raise Exception("Error: configure_smartcard failed with the asked parameters! Please check what your card supports (PTS, ETU, ...) and try other parameters!")
+                                raise CardConfigureError("Configure_smartcard failed with the asked parameters! Please check what your card supports (PTS, ETU, ...) and try other parameters!")
                         else:
-                                raise Exception("Error: configure_smartcard failed with the asked parameters! Please check what your card supports (PTS, ETU, ...) and try other parameters!")
+                            raise CardConfigureError("Configure_smartcard failed with the asked parameters! Please check what your card supports (PTS, ETU, ...) and try other parameters!")
             else:
                 try:
                     struct = ConfigureSmartcardCommand(
@@ -958,7 +972,7 @@ class LEIA:
                     )
                     self._send_command(b"c", struct)
                 except Exception:
-                    if negotiate_pts == None:
+                    if negotiate_pts is None:
                         try:
                             # If we have not been asked to specifically negotiate
                             struct = ConfigureSmartcardCommand(
@@ -970,9 +984,9 @@ class LEIA:
                             )
                             self._send_command(b"c", struct)
                         except Exception:
-                            raise Exception("Error: configure_smartcard failed with the asked parameters! Please check what your card supports (PTS, ETU, ...) and try other parameters!")
+                            raise CardConfigureError("Configure_smartcard failed with the asked parameters! Please check what your card supports (PTS, ETU, ...) and try other parameters!")
                     else:
-                        raise Exception("Error: configure_smartcard failed with the asked parameters! Please check what your card supports (PTS, ETU, ...) and try other parameters!")
+                        raise CardConfigureError("Configure_smartcard failed with the asked parameters! Please check what your card supports (PTS, ETU, ...) and try other parameters!")
 
     def get_trigger_strategy(self, SID: int) -> TriggerStrategy:
         """
@@ -984,10 +998,10 @@ class LEIA:
         Returns:
             TriggerStrategy: The trigger strategy N°SID.
         """
+        if SID >= STRATEGY_MAX:
+            raise ValueError("get_trigger_strategy: asked SID=%d exceeds STRATEGY_MAX=%d" % (SID, STRATEGY_MAX))
 
         with self.lock:
-            if SID >= STRATEGY_MAX:
-                raise Exception("get_trigger_strategy: asked SID=%d exceeds STRATEGY_MAX=%d" % (SID, STRATEGY_MAX))
            
             self._send_command(b"o", ByteStruct(SID))
 
@@ -1007,10 +1021,10 @@ class LEIA:
             point_list: the sequence to match for the trigger.
             delay: the delay (in milliseconds) between the moment of the detection and the moment where the trigger is actually set high.
         """
+        if SID >= STRATEGY_MAX:
+            raise ValueError("get_trigger_strategy: asked SID=%d exceeds STRATEGY_MAX=%d" % (SID, STRATEGY_MAX))
 
         with self.lock:
-            if SID >= STRATEGY_MAX:
-                raise Exception("get_trigger_strategy: asked SID=%d exceeds STRATEGY_MAX=%d" % (SID, STRATEGY_MAX))
 
             if isinstance(point_list, int):
                 size = 1
@@ -1067,7 +1081,7 @@ class LEIA:
 
             r_size = self._read_response_size()
             if r_size != 1:
-                raise Exception(
+                raise LEIAException(
                     "Invalid response size for 'is_card_inserted' (?) command."
                 )
             r = self.ser.read(1)
@@ -1174,7 +1188,7 @@ class LEIA:
                     "Error: cannot connect to %s:%d. Is PCSCD running with virtual smartcard readers?"
                     % (host, port)
                 )
-                raise (e)
+                raise e
 
             s.settimeout(10)
 
