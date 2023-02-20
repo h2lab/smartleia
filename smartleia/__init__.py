@@ -476,13 +476,13 @@ def create_APDU_from_bytes(_bytes) -> APDU:
     apdu.cla, apdu.ins, apdu.p1, apdu.p2 = _bytes[:4]
     apdu.send_le = 0
 
-    if len(_bytes) < 5:
-        raise NotImplementedError(
-            "Error in decoding APDU buffer of size %d is too small" % (len(_bytes))
-        )
     if len(_bytes) == 5:
         apdu.lc, apdu.le = 0, _bytes[4]
         apdu.send_le = 1
+    elif len(_bytes) == 4:
+        # send_le = 0 and the below give a short 4-byte APDU
+        apdu.lc = 0
+        apdu.le = 0
     else:
         apdu.lc, apdu.le = _bytes[4], 0
         if apdu.lc == 0x00 and len(_bytes) >= 8:
