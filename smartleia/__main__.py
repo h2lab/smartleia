@@ -59,7 +59,7 @@ if __name__ == "__main__":
                        ETU_to_use=...,
                        freq_to_use=...,
                        negotiate_pts=True,
-                       negotiate_baudate=True)
+                       negotiate_baudrate=True)
 
             t0()    Equivalent to configure(protocol_to_use=0)
             t1()    Equivalent to configure(protocol_to_use=1)
