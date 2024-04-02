@@ -20,7 +20,7 @@ if os.path.exists(readme_path):
 setup(
     long_description=readme,
     name='smartleia',
-    version='1.0.1',
+    version='1.0.2',
     description='Python toolkit for LEIA smartcard reader',
     python_requires='==3.*,>=3.6.0',
     project_urls={"homepage": "https://h2lab.org/devices/leia/quickstart/", "repository": "https://github.com/h2lab/smartleia"},
